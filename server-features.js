@@ -1,4 +1,6 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -11,7 +13,9 @@ import {
   TextInputStyle,
 } from 'discord.js';
 
-const STORE_PATH = new URL('./guild-settings.json', import.meta.url);
+const STORE_PATH = process.env.DATA_DIR
+  ? join(process.env.DATA_DIR, 'guild-settings.json')
+  : fileURLToPath(new URL('./guild-settings.json', import.meta.url));
 const SPAM_WINDOW_MS = 5_000;
 const SPAM_MESSAGE_LIMIT = 7;
 const DUPLICATE_WINDOW_MS = 10_000;
@@ -24,6 +28,7 @@ let pendingWrite = Promise.resolve();
 
 export async function loadServerFeatureStore() {
   try {
+    await mkdir(dirname(STORE_PATH), { recursive: true });
     const saved = JSON.parse(await readFile(STORE_PATH, 'utf8'));
     store = {
       guilds: saved.guilds && typeof saved.guilds === 'object' ? saved.guilds : {},
